@@ -18,35 +18,37 @@ export async function renderStudentDashboard(el) {
   }
 
   el.innerHTML = `
-    <div style="margin-bottom: 24px;">
-      <h1 style="font-size: 28px; margin-bottom: 4px;">Welcome back, ${user.name}</h1>
-      <p style="color: var(--text-muted); margin:0;">Here's your academic overview for today.</p>
+    <div class="page-header">
+      <div>
+        <h1>Welcome back, ${user.name}</h1>
+        <p>Here's your academic overview for today.</p>
+      </div>
     </div>
     
     <div class="grid-3" style="margin-bottom: 24px;">
-      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
-        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Overall Attendance</div>
-        <div style="font-size: 32px; font-weight: 700; color: ${overallPercentage >= 75 ? 'var(--success)' : 'var(--danger)'}">${overallPercentage}${overallPercentage !== 'N/A' ? '%' : ''}</div>
-        <div style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Current Semester</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Overall Attendance</div>
+        <div class="kpi-value" style="color: ${overallPercentage >= 75 ? 'var(--success)' : 'var(--danger)'}">${overallPercentage}${overallPercentage !== 'N/A' ? '%' : ''}</div>
+        <div class="kpi-meta neutral">Current Semester</div>
       </div>
-      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
-        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Upcoming Exams</div>
-        <div style="font-size: 32px; font-weight: 700;">2</div>
-        <div style="color: var(--warning); font-size: 12px; margin-top: 4px;">Next: Physics Practical</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Upcoming Exams</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-meta warning">Next: Physics Practical</div>
       </div>
-      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
-        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Pending Fees</div>
-        <div style="font-size: 32px; font-weight: 700;">$0</div>
-        <div style="color: var(--success); font-size: 12px; margin-top: 4px;">All cleared</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Pending Fees</div>
+        <div class="kpi-value">$0</div>
+        <div class="kpi-meta success">All cleared</div>
       </div>
     </div>
     
     <div class="grid-2">
       <div class="card">
         <h2><svg><use href="#icon-bell"></use></svg> Notices & Announcements</h2>
-        <div class="activity-list">
+        <div class="activity-list" style="margin-top: 16px;">
           <div class="activity-item">
-            <div class="dot" style="background: var(--primary);"></div>
+            <div class="dot" style="background: var(--info);"></div>
             <div class="content">
               <p><strong>Holiday Notice:</strong> College will be closed on Friday for state holiday.</p>
               <time>Today</time>
@@ -64,11 +66,11 @@ export async function renderStudentDashboard(el) {
       
       <div class="card">
         <h2><svg><use href="#icon-calendar"></use></svg> Quick Access</h2>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <button class="secondary" onclick="switchTab('attendance')" style="justify-content: flex-start; padding: 12px;">
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top: 16px;">
+          <button class="secondary" onclick="switchTab('attendance')" style="justify-content: flex-start; height: 48px;">
             <svg><use href="#icon-check"></use></svg> View Detailed Attendance
           </button>
-          <button class="secondary" style="justify-content: flex-start; padding: 12px; opacity: 0.6; cursor: not-allowed;" disabled>
+          <button class="secondary" style="justify-content: flex-start; height: 48px;" disabled>
             <svg><use href="#icon-chart"></use></svg> View Results (Not Available)
           </button>
         </div>
@@ -90,10 +92,10 @@ export async function renderStudentAttendance(el) {
   
   if (records.length === 0) {
     el.innerHTML = `
-      <div class="card" style="text-align:center; padding: 48px;">
-        <svg style="width:48px; height:48px; fill:var(--text-muted); margin-bottom:16px;"><use href="#icon-check"></use></svg>
+      <div class="card empty-state">
+        <svg><use href="#icon-check"></use></svg>
         <h3>No Attendance Records Found</h3>
-        <p style="color:var(--text-muted);">Your teachers have not marked any attendance yet.</p>
+        <p>Your teachers have not marked any attendance yet.</p>
       </div>
     `;
     return;
@@ -118,15 +120,15 @@ export async function renderStudentAttendance(el) {
     const color = pct >= 75 ? 'var(--success)' : 'var(--danger)';
     return `
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
           <div>
-            <h3 style="margin:0 0 4px 0;">${sub || 'General'}</h3>
+            <h3 style="font-size: 14px; margin-bottom: 4px;">${sub || 'General'}</h3>
             <p style="margin:0; font-size:12px; color:var(--text-muted);">${data.present} / ${data.total} Classes</p>
           </div>
-          <div style="font-size:24px; font-weight:bold; color:${color}">${pct}%</div>
+          <div style="font-size:20px; font-weight:600; color:${color}">${pct}%</div>
         </div>
-        <div style="width:100%; height:8px; background:var(--border-color); border-radius:4px; overflow:hidden;">
-          <div style="width:${pct}%; height:100%; background:${color}; border-radius:4px;"></div>
+        <div style="width:100%; height:6px; background:var(--border); border-radius:3px; overflow:hidden;">
+          <div style="width:${pct}%; height:100%; background:${color}; border-radius:3px;"></div>
         </div>
       </div>
     `;
@@ -135,44 +137,49 @@ export async function renderStudentAttendance(el) {
   const historyRows = records.map(r => `
     <tr>
       <td>${new Date(r.date).toLocaleDateString()}</td>
-      <td>${r.subject || 'General'}</td>
-      <td>${r.class_name}</td>
+      <td><div style="font-weight: 500;">${r.subject || 'General'}</div></td>
+      <td style="color: var(--text-muted);">${r.class_name}</td>
       <td>
-        <span class="status-badge ${r.status}">${r.status}</span>
+        <span class="badge ${r.status === 'present' ? 'success' : (r.status === 'absent' ? 'danger' : 'warning')}">${r.status}</span>
       </td>
-      <td>${r.teacher_name}</td>
+      <td style="color: var(--text-muted);">${r.teacher_name}</td>
     </tr>
   `).join('');
 
   el.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-      <h1 style="font-size: 24px; margin:0;">My Attendance</h1>
-      <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:12px; padding: 12px 24px;">
-        <div style="font-size:12px; color:var(--text-muted);">Overall Percentage</div>
-        <div style="font-size:24px; font-weight:bold; color:${overallPercentage >= 75 ? 'var(--success)' : 'var(--danger)'}">${overallPercentage}%</div>
+    <div class="page-header">
+      <div>
+        <h1>My Attendance</h1>
+        <p>View your class attendance records</p>
+      </div>
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding: 12px 24px; box-shadow: var(--shadow-sm); text-align: right;">
+        <div style="font-size:11px; color:var(--text-muted); font-weight: 500;">Overall Percentage</div>
+        <div style="font-size:24px; font-weight:600; color:${overallPercentage >= 75 ? 'var(--success)' : 'var(--danger)'}; line-height: 1.2;">${overallPercentage}%</div>
       </div>
     </div>
     
-    <div class="grid-3" style="margin-bottom: 24px;">
+    <div class="grid-4" style="margin-bottom: 24px;">
       ${subjectCards}
     </div>
     
-    <div class="card">
-      <h3 style="margin-top:0;">Recent History</h3>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Subject</th>
-            <th>Class</th>
-            <th>Status</th>
-            <th>Teacher</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${historyRows}
-        </tbody>
-      </table>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <h3 style="padding: 24px; margin: 0; border-bottom: 1px solid var(--border);">Recent History</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Class</th>
+              <th>Status</th>
+              <th>Teacher</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${historyRows}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 }

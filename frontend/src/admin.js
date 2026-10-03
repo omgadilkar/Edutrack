@@ -1,5 +1,5 @@
 import { api } from './api.js';
-import { renderAvatar, renderEmpty } from './components.js';
+import { renderAvatar, renderEmpty, getSkeletonRow } from './components.js';
 import { renderTab, switchTab, activeTab } from './main.js';
 import { showToast } from './components.js';
 
@@ -57,57 +57,45 @@ export async function renderAdminDashboard(el) {
   const teachersCount = users.filter(u => u.role === 'teacher').length;
 
   el.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 24px;">
+    <div class="page-header">
       <div>
-        <h2 style="font-size: 28px; margin-bottom: 4px;">Overview</h2>
-        <p style="color: var(--text-muted); margin:0;">Monitor your institution's key metrics</p>
+        <h1>Overview</h1>
+        <p>Monitor your institution's key metrics</p>
       </div>
-      <button><svg><use href="#icon-plus"></use></svg> Generate Report</button>
+      <button><svg><use href="#icon-chart"></use></svg> Generate Report</button>
     </div>
 
     <div class="grid-3" style="margin-bottom: 24px;">
-      <div class="card stat-card">
-        <div class="info">
-          <h3>Total Students</h3>
-          <p>${studentsCount}</p>
-          <div class="trend up"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> +12% this month</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Total Students</div>
+        <div class="kpi-value">${studentsCount}</div>
+        <div class="kpi-meta success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+          +12% this month
         </div>
-        <div class="icon"><svg><use href="#icon-users"></use></svg></div>
       </div>
-      <div class="card stat-card">
-        <div class="info">
-          <h3>Active Teachers</h3>
-          <p>${teachersCount}</p>
-          <div class="trend up"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> +2% this month</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Active Teachers</div>
+        <div class="kpi-value">${teachersCount}</div>
+        <div class="kpi-meta success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+          +2% this month
         </div>
-        <div class="icon"><svg><use href="#icon-book"></use></svg></div>
       </div>
-      <div class="card stat-card">
-        <div class="info">
-          <h3>Fee Collection <span class="badge" style="background:rgba(255,255,255,0.1); color:inherit; font-size:10px;">Demo</span></h3>
-          <p>$124,500</p>
-          <div class="trend up"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> +8% this month</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Fee Collection (Demo)</div>
+        <div class="kpi-value">$124,500</div>
+        <div class="kpi-meta success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+          +8% this month
         </div>
-        <div class="icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);"><svg><use href="#icon-chart"></use></svg></div>
       </div>
     </div>
 
     <div class="grid-2">
       <div class="card">
-        <h2><svg><use href="#icon-chart"></use></svg> Enrollment Trends (Demo)</h2>
-        <div class="css-bar-chart">
-          <div class="css-bar-col"><div class="css-bar" style="height: 40%;" data-val="120"></div><span class="css-bar-label">Jan</span></div>
-          <div class="css-bar-col"><div class="css-bar" style="height: 55%;" data-val="145"></div><span class="css-bar-label">Feb</span></div>
-          <div class="css-bar-col"><div class="css-bar" style="height: 45%;" data-val="130"></div><span class="css-bar-label">Mar</span></div>
-          <div class="css-bar-col"><div class="css-bar" style="height: 70%;" data-val="180"></div><span class="css-bar-label">Apr</span></div>
-          <div class="css-bar-col"><div class="css-bar" style="height: 90%;" data-val="210"></div><span class="css-bar-label">May</span></div>
-          <div class="css-bar-col"><div class="css-bar" style="height: 60%;" data-val="160"></div><span class="css-bar-label">Jun</span></div>
-        </div>
-      </div>
-      
-      <div class="card">
         <h2><svg><use href="#icon-bell"></use></svg> Recent Activities</h2>
-        <div class="activity-list">
+        <div class="activity-list" style="margin-top: 16px;">
           <div class="activity-item">
             <div class="dot"></div>
             <div class="content"><p><strong>Prof. Sharma</strong> published grades for Physics 101.</p><time>2 hours ago</time></div>
@@ -125,28 +113,14 @@ export async function renderAdminDashboard(el) {
       
       <div class="card">
         <h2><svg><use href="#icon-book"></use></svg> Important Notices</h2>
-        <div class="activity-list">
+        <div class="activity-list" style="margin-top: 16px;">
           <div class="activity-item">
             <div class="dot" style="background: var(--danger);"></div>
             <div class="content"><p><strong>Exam Schedule Updated</strong> for mid-terms.</p><time>Check departmental boards</time></div>
           </div>
           <div class="activity-item">
-            <div class="dot" style="background: var(--primary-light);"></div>
+            <div class="dot" style="background: var(--info);"></div>
             <div class="content"><p><strong>Holiday Notice:</strong> Campus closed this Friday.</p><time>Admin Dept</time></div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="card">
-        <h2><svg><use href="#icon-check"></use></svg> Pending Tasks</h2>
-        <div>
-          <div class="task-item">
-            <div><div class="title">Review Faculty Applications</div><div class="meta">3 pending reviews</div></div>
-            <button class="secondary icon-only"><svg><use href="#icon-menu"></use></svg></button>
-          </div>
-          <div class="task-item">
-            <div><div class="title">Approve Budget Q3</div><div class="meta">Due in 2 days</div></div>
-            <button class="secondary icon-only"><svg><use href="#icon-menu"></use></svg></button>
           </div>
         </div>
       </div>
@@ -171,35 +145,28 @@ export async function renderAdminStudents(el, skipFetch = false) {
       <div style="margin-bottom: 24px;">
         <button class="secondary" onclick="closeProfile()"><svg><use href="#icon-menu"></use></svg> Back to Directory</button>
       </div>
-      <div class="profile-header">
+      <div class="card" style="display:flex; gap: 24px; align-items: center; margin-bottom: 24px;">
         ${renderAvatar(student.name)}
-        <div class="profile-info">
-          <h1>${student.name}</h1>
-          <div class="meta">
-            <div><svg><use href="#icon-users"></use></svg> ${student.student_number || 'No Roll #'}</div>
-            <div><svg><use href="#icon-bell"></use></svg> ${student.email}</div>
-            <div><svg><use href="#icon-check"></use></svg> ${student.phone || 'No Phone'}</div>
-            <div class="status-badge active">Active</div>
+        <div style="flex:1;">
+          <h1 style="font-size: 24px; margin-bottom: 8px;">${student.name}</h1>
+          <div style="display:flex; gap: 16px; color: var(--text-muted); font-size: 13px;">
+            <div>Roll #: ${student.student_number || 'N/A'}</div>
+            <div>Email: ${student.email}</div>
+            <div>Phone: ${student.phone || 'N/A'}</div>
+            <span class="badge success">Active</span>
           </div>
-          ${isAdmin ? `<button class="secondary"><svg><use href="#icon-menu"></use></svg> Edit Profile (Demo)</button>` : ''}
         </div>
+        ${isAdmin ? `<button class="secondary">Edit Profile</button>` : ''}
       </div>
+      
       <div class="grid-2">
         <div class="card">
           <h2>Academic Details (Demo)</h2>
-          <div style="font-size: 14px; display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-            <div><div style="color:var(--text-muted); font-size:12px;">Department</div><div style="font-weight:600;">Computer Science</div></div>
-            <div><div style="color:var(--text-muted); font-size:12px;">Course</div><div style="font-weight:600;">B.Tech CSE</div></div>
-            <div><div style="color:var(--text-muted); font-size:12px;">Year & Semester</div><div style="font-weight:600;">Year 3, Sem 5</div></div>
-            <div><div style="color:var(--text-muted); font-size:12px;">Division</div><div style="font-weight:600;">A</div></div>
-          </div>
-        </div>
-        <div class="card">
-          <h2>Attendance Summary (Demo)</h2>
-          <div class="css-bar-chart" style="height:100px;">
-            <div class="css-bar-col"><div class="css-bar" style="height: 85%;" data-val="85%"></div><span class="css-bar-label">Overall</span></div>
-            <div class="css-bar-col"><div class="css-bar" style="height: 90%; background:var(--success);" data-val="90%"></div><span class="css-bar-label">Physics</span></div>
-            <div class="css-bar-col"><div class="css-bar" style="height: 75%; background:var(--warning);" data-val="75%"></div><span class="css-bar-label">Math</span></div>
+          <div style="font-size: 14px; display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top: 16px;">
+            <div><div style="color:var(--text-muted); font-size:12px; margin-bottom:4px;">Department</div><div style="font-weight:500;">Computer Science</div></div>
+            <div><div style="color:var(--text-muted); font-size:12px; margin-bottom:4px;">Course</div><div style="font-weight:500;">B.Tech CSE</div></div>
+            <div><div style="color:var(--text-muted); font-size:12px; margin-bottom:4px;">Year & Semester</div><div style="font-weight:500;">Year 3, Sem 5</div></div>
+            <div><div style="color:var(--text-muted); font-size:12px; margin-bottom:4px;">Division</div><div style="font-weight:500;">A</div></div>
           </div>
         </div>
       </div>
@@ -246,12 +213,12 @@ export async function renderAdminStudents(el, skipFetch = false) {
             </div>
           </div>
         </td>
-        <td><div style="font-size: 13px;">${u.student_number || 'N/A'}</div></td>
-        <td><div class="status-badge active">Active</div></td>
-        <td onclick="event.stopPropagation()">
+        <td>${u.student_number || '-'}</td>
+        <td><span class="badge success">Active</span></td>
+        <td onclick="event.stopPropagation()" style="text-align: right;">
           ${isAdmin ? `
-            <button class="secondary icon-only danger" title="Delete" onclick="deleteStudent(${u.id})">
-              <svg><use href="#icon-close"></use></svg>
+            <button class="secondary danger icon-only" title="Delete" onclick="deleteStudent(${u.id})">
+              <svg><use href="#icon-trash"></use></svg>
             </button>
           ` : '<span style="font-size:12px;color:var(--text-muted);">View Only</span>'}
         </td>
@@ -260,55 +227,50 @@ export async function renderAdminStudents(el, skipFetch = false) {
   }
 
   el.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 24px;">
+    <div class="page-header">
       <div>
-        <h2 style="font-size: 28px; margin-bottom: 4px;">Student Directory</h2>
-        <p style="color: var(--text-muted); margin:0;">Manage and view all enrolled students</p>
+        <h1>Student Directory</h1>
+        <p>Manage and view all enrolled students</p>
       </div>
       ${isAdmin ? `<button onclick="openModal('add-student-modal')"><svg><use href="#icon-plus"></use></svg> Add Student</button>` : ''}
     </div>
     
-    <div class="card" style="margin-bottom: 24px; padding: 16px 24px;">
-      <div class="filter-bar">
-        <select id="filter-dept" onchange="updateFilters()" style="padding: 8px; border-radius: 6px;">
+    <div class="card" style="margin-bottom: 24px;">
+      <div style="display:flex; gap: 12px; flex-wrap: wrap;">
+        <select id="filter-dept" onchange="updateFilters()">
           <option value="">All Departments (Demo)</option>
           <option value="cs">Computer Science</option>
           <option value="it">Info Tech</option>
         </select>
-        <select id="filter-course" onchange="updateFilters()" style="padding: 8px; border-radius: 6px;">
+        <select id="filter-course" onchange="updateFilters()">
           <option value="">All Courses (Demo)</option>
           <option value="btech">B.Tech</option>
           <option value="mtech">M.Tech</option>
         </select>
-        <select id="filter-status" onchange="updateFilters()" style="padding: 8px; border-radius: 6px;">
-          <option value="">All Statuses (Demo)</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
       </div>
     </div>
 
-    <div class="card" style="overflow-x: auto; padding: 0;">
-      <table style="margin: 0;">
-        <thead>
-          <tr>
-            <th onclick="setSort('name')" style="cursor:pointer;">Student Info ${sortCol === 'name' ? (sortDesc ? '↓' : '↑') : ''}</th>
-            <th onclick="setSort('student_number')" style="cursor:pointer;">Roll No ${sortCol === 'student_number' ? (sortDesc ? '↓' : '↑') : ''}</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableContent}
-        </tbody>
-      </table>
-      <div style="padding: 0 24px;">
-        <div class="pagination">
-          <div>Showing ${startIdx + 1} to ${Math.min(startIdx + ITEMS_PER_PAGE, totalItems)} of ${totalItems} students</div>
-          <div class="pagination-controls">
-            <button class="secondary" onclick="setPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>
-            <button class="secondary" onclick="setPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-          </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="setSort('name')" style="cursor:pointer; width: 40%;">Student ${sortCol === 'name' ? (sortDesc ? '↓' : '↑') : ''}</th>
+              <th onclick="setSort('student_number')" style="cursor:pointer; width: 20%;">Roll No ${sortCol === 'student_number' ? (sortDesc ? '↓' : '↑') : ''}</th>
+              <th style="width: 20%;">Status</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableContent}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-muted);">
+        <div>Showing ${startIdx + 1} to ${Math.min(startIdx + ITEMS_PER_PAGE, totalItems)} of ${totalItems}</div>
+        <div style="display:flex; gap:8px;">
+          <button class="secondary" onclick="setPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+          <button class="secondary" onclick="setPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
         </div>
       </div>
     </div>
@@ -415,10 +377,10 @@ export async function renderAdminAttendance(el) {
   const collegeAvg = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 0;
   
   el.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 24px;">
+    <div class="page-header">
       <div>
-        <h2 style="font-size: 28px; margin-bottom: 4px;">Attendance Reports</h2>
-        <p style="color: var(--text-muted); margin:0;">College-wide attendance tracking and metrics</p>
+        <h1>Attendance Reports</h1>
+        <p>College-wide attendance tracking and metrics</p>
       </div>
       <div style="text-align:right;">
         <div style="font-size:12px; color:var(--text-muted);">Filtered Average</div>
@@ -426,47 +388,49 @@ export async function renderAdminAttendance(el) {
       </div>
     </div>
     
-    <div class="card" style="margin-bottom: 24px; padding: 16px 24px;">
-      <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:12px;">
-        <input id="att-filter-dept" placeholder="Department (e.g. Science)" value="${adminAttFilters.department}" style="flex:1; min-width:120px;" />
-        <input id="att-filter-course" placeholder="Course (e.g. B.Tech)" value="${adminAttFilters.course}" style="flex:1; min-width:120px;" />
-        <input id="att-filter-sem" placeholder="Semester (e.g. Sem 1)" value="${adminAttFilters.semester}" style="flex:1; min-width:120px;" />
-        <input id="att-filter-div" placeholder="Division (e.g. A)" value="${adminAttFilters.division}" style="flex:1; min-width:80px;" />
-        <input id="att-filter-sub" placeholder="Subject (e.g. Physics)" value="${adminAttFilters.subject}" style="flex:1; min-width:120px;" />
+    <div class="card" style="margin-bottom: 24px;">
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+        <input id="att-filter-dept" placeholder="Department" value="${adminAttFilters.department}" style="flex:1; min-width:120px;" />
+        <input id="att-filter-course" placeholder="Course" value="${adminAttFilters.course}" style="flex:1; min-width:120px;" />
+        <input id="att-filter-sem" placeholder="Semester" value="${adminAttFilters.semester}" style="flex:1; min-width:120px;" />
+        <input id="att-filter-div" placeholder="Division" value="${adminAttFilters.division}" style="flex:1; min-width:120px;" />
+        <input id="att-filter-sub" placeholder="Subject" value="${adminAttFilters.subject}" style="flex:1; min-width:120px;" />
         <button class="secondary" onclick="updateAdminAttFilters()"><svg><use href="#icon-search"></use></svg> Filter</button>
       </div>
     </div>
     
-    <div class="card" style="overflow-x: auto; padding: 0;">
-      <table style="margin: 0;">
-        <thead>
-          <tr>
-            <th>Student</th>
-            <th>Roll No</th>
-            <th style="text-align:right;">Total Classes</th>
-            <th style="text-align:right;">Present</th>
-            <th style="text-align:right;">Percentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${report.length ? report.map(r => {
-            const pct = r.total_classes > 0 ? Math.round((r.present_classes / r.total_classes) * 100) : 0;
-            return `
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-container">
+        <table>
+          <thead>
             <tr>
-              <td>
-                <div style="font-weight: 500;">${r.student_name}</div>
-              </td>
-              <td>${r.student_number || '-'}</td>
-              <td style="text-align:right;">${r.total_classes}</td>
-              <td style="text-align:right;">${r.present_classes}</td>
-              <td style="text-align:right;">
-                <span class="status-badge ${pct >= 75 ? 'active' : 'inactive'}">${pct}%</span>
-              </td>
+              <th>Student</th>
+              <th>Roll No</th>
+              <th style="text-align:right;">Total Classes</th>
+              <th style="text-align:right;">Present</th>
+              <th style="text-align:right;">Percentage</th>
             </tr>
-            `;
-          }).join('') : `<tr><td colspan="5">${renderEmpty('No records', 'Adjust filters to see results.')}</td></tr>`}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${report.length ? report.map(r => {
+              const pct = r.total_classes > 0 ? Math.round((r.present_classes / r.total_classes) * 100) : 0;
+              return `
+              <tr>
+                <td>
+                  <div style="font-weight: 500;">${r.student_name}</div>
+                </td>
+                <td>${r.student_number || '-'}</td>
+                <td style="text-align:right;">${r.total_classes}</td>
+                <td style="text-align:right;">${r.present_classes}</td>
+                <td style="text-align:right;">
+                  <span class="badge ${pct >= 75 ? 'success' : 'danger'}">${pct}%</span>
+                </td>
+              </tr>
+              `;
+            }).join('') : `<tr><td colspan="5">${renderEmpty('No records found', 'Try adjusting your filters.')}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 }

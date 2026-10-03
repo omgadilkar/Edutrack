@@ -1,6 +1,6 @@
 import { api } from './api.js';
 import { renderAvatar, renderEmpty, renderRadialGauge, showToast } from './components.js';
-import { renderTab } from './main.js';
+import { renderTab, switchTab } from './main.js';
 
 let selectedClassId = null;
 
@@ -17,7 +17,7 @@ window.attendanceState = {
 };
 
 function classSelector(classes) {
-  return `<select onchange="setSelectedClass(this.value); renderTab()" style="margin-bottom: 24px; max-width: 300px;">
+  return `<select onchange="setSelectedClass(this.value); renderTab()" style="margin-bottom: 24px;">
     ${classes.map(c => `<option value="${c.id}" ${c.id == selectedClassId ? 'selected' : ''}>${c.name}</option>`).join('')}
   </select>`;
 }
@@ -34,26 +34,28 @@ export async function renderTeacherDashboard(el) {
   const subjects = new Set(classes.map(c => c.subject).filter(Boolean));
   
   el.innerHTML = `
-    <div style="margin-bottom: 24px;">
-      <h1 style="font-size: 28px; margin-bottom: 4px;">Faculty Dashboard</h1>
-      <p style="color: var(--text-muted); margin:0;">Manage your classes, attendance, and academics.</p>
+    <div class="page-header">
+      <div>
+        <h1>Faculty Dashboard</h1>
+        <p>Manage your classes, attendance, and academics.</p>
+      </div>
     </div>
     
     <div class="grid-3" style="margin-bottom: 24px;">
-      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
-        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Assigned Classes</div>
-        <div style="font-size: 32px; font-weight: 700;">${classes.length}</div>
-        <div style="color: var(--success); font-size: 12px; margin-top: 4px;">Active Semester</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Assigned Classes</div>
+        <div class="kpi-value">${classes.length}</div>
+        <div class="kpi-meta success">Active Semester</div>
       </div>
-      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
-        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Unique Subjects</div>
-        <div style="font-size: 32px; font-weight: 700;">${subjects.size}</div>
-        <div style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Across all divisions</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Unique Subjects</div>
+        <div class="kpi-value">${subjects.size}</div>
+        <div class="kpi-meta neutral">Across all divisions</div>
       </div>
-      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
-        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Total Students</div>
-        <div style="font-size: 32px; font-weight: 700;">${students.length}</div>
-        <div style="color: var(--primary); font-size: 12px; margin-top: 4px; cursor: pointer;" onclick="switchTab('students')">View Directory &rarr;</div>
+      <div class="card kpi-card">
+        <div class="kpi-title">Total Students</div>
+        <div class="kpi-value">${students.length}</div>
+        <div class="kpi-meta info" style="cursor: pointer;" onclick="switchTab('students')">View Directory &rarr;</div>
       </div>
     </div>
     
@@ -63,36 +65,38 @@ export async function renderTeacherDashboard(el) {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 style="margin: 0;"><svg><use href="#icon-calendar"></use></svg> Today's Timetable</h2>
           </div>
-          <div class="task-item">
-            <div>
-              <div class="title">Grade 10 - Physics (A)</div>
-              <div class="meta">10:00 AM - 11:00 AM • Room 302</div>
+          <div class="activity-list">
+            <div class="activity-item" style="align-items:center; border:1px solid var(--border); padding: 12px; border-radius: var(--radius-md);">
+              <div style="flex:1;">
+                <div style="font-weight: 500;">Grade 10 - Physics (A)</div>
+                <div style="font-size:12px; color:var(--text-muted);">10:00 AM - 11:00 AM • Room 302</div>
+              </div>
+              <button class="secondary" onclick="switchTab('attendance')">Attendance</button>
             </div>
-            <button class="secondary" onclick="switchTab('attendance')" style="padding: 4px 12px; font-size: 12px;">Attendance</button>
-          </div>
-          <div class="task-item">
-            <div>
-              <div class="title">Grade 11 - Advanced Math</div>
-              <div class="meta">11:30 AM - 12:30 PM • Room 405</div>
+            <div class="activity-item" style="align-items:center; border:1px solid var(--border); padding: 12px; border-radius: var(--radius-md);">
+              <div style="flex:1;">
+                <div style="font-weight: 500;">Grade 11 - Advanced Math</div>
+                <div style="font-size:12px; color:var(--text-muted);">11:30 AM - 12:30 PM • Room 405</div>
+              </div>
+              <button class="secondary" onclick="switchTab('attendance')">Attendance</button>
             </div>
-            <button class="secondary" onclick="switchTab('attendance')" style="padding: 4px 12px; font-size: 12px;">Attendance</button>
-          </div>
-          <div class="task-item" style="border-left: 3px solid var(--warning);">
-            <div>
-              <div class="title">Faculty Meeting (Demo)</div>
-              <div class="meta">2:00 PM - 3:00 PM • Staff Room</div>
+            <div class="activity-item" style="align-items:center; border:1px solid var(--warning); padding: 12px; border-radius: var(--radius-md); background: var(--warning-bg);">
+              <div style="flex:1;">
+                <div style="font-weight: 500;">Faculty Meeting (Demo)</div>
+                <div style="font-size:12px; color:var(--warning-text);">2:00 PM - 3:00 PM • Staff Room</div>
+              </div>
             </div>
           </div>
         </div>
         
         <div class="card">
           <h2><svg><use href="#icon-chart"></use></svg> Pending Marks Entry (Demo)</h2>
-          <div class="activity-list">
+          <div class="activity-list" style="margin-top:16px;">
             <div class="activity-item">
               <div class="dot" style="background: var(--danger);"></div>
-              <div class="content">
+              <div class="content" style="flex:1;">
                 <p><strong>Grade 10 Midterms</strong> pending for 15 students.</p>
-                <button class="secondary" onclick="switchTab('grades')" style="padding: 4px 8px; font-size: 11px; margin-top: 4px;">Enter Marks</button>
+                <button class="secondary" onclick="switchTab('grades')" style="margin-top: 8px;">Enter Marks</button>
               </div>
             </div>
             <div class="activity-item">
@@ -108,9 +112,9 @@ export async function renderTeacherDashboard(el) {
       <div style="display: flex; flex-direction: column; gap: 24px;">
         <div class="card">
           <h2><svg><use href="#icon-bell"></use></svg> Notice Board (Demo)</h2>
-          <div class="activity-list">
+          <div class="activity-list" style="margin-top:16px;">
             <div class="activity-item">
-              <div class="dot" style="background: var(--primary);"></div>
+              <div class="dot" style="background: var(--info);"></div>
               <div class="content">
                 <p><strong>Exam Schedule Released:</strong> Final exams begin next month.</p>
                 <time>2 hours ago</time>
@@ -128,19 +132,21 @@ export async function renderTeacherDashboard(el) {
         
         <div class="card">
           <h2><svg><use href="#icon-check"></use></svg> Upcoming Examinations (Demo)</h2>
-          <div class="task-item">
-            <div>
-              <div class="title">Physics Practical</div>
-              <div class="meta">Grade 12 • Oct 15th</div>
+          <div class="activity-list" style="margin-top:16px;">
+            <div class="activity-item" style="justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px;">
+              <div>
+                <div style="font-weight: 500;">Physics Practical</div>
+                <div style="font-size:12px; color:var(--text-muted);">Grade 12 • Oct 15th</div>
+              </div>
+              <span class="badge warning">Upcoming</span>
             </div>
-            <span class="status-badge pending">Upcoming</span>
-          </div>
-          <div class="task-item">
-            <div>
-              <div class="title">Math Final</div>
-              <div class="meta">Grade 10 • Oct 18th</div>
+            <div class="activity-item" style="justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight: 500;">Math Final</div>
+                <div style="font-size:12px; color:var(--text-muted);">Grade 10 • Oct 18th</div>
+              </div>
+              <span class="badge warning">Upcoming</span>
             </div>
-            <span class="status-badge pending">Upcoming</span>
           </div>
         </div>
       </div>
@@ -155,6 +161,13 @@ export async function renderClasses(el) {
     api('/users?role=student')
   ]);
   el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1>Classes</h1>
+        <p>Manage your assigned classes and enrollments.</p>
+      </div>
+    </div>
+    
     <div class="grid-2">
       <div style="display: flex; flex-direction: column; gap: 24px; align-self: start;">
         <div class="card">
@@ -166,16 +179,16 @@ export async function renderClasses(el) {
             <input id="nc-subject" placeholder="Subject" />
           </div>
           <div class="form-row">
-            <select id="nc-schedule-day" style="flex: 2;">
+            <select id="nc-schedule-day">
               <option value="Mon/Wed">Mon/Wed</option>
               <option value="Tue/Thu">Tue/Thu</option>
               <option value="Mon/Wed/Fri">Mon/Wed/Fri</option>
               <option value="Everyday">Everyday</option>
             </select>
-            <input id="nc-schedule-time" type="time" style="flex: 1;" value="10:00" />
+            <input id="nc-schedule-time" type="time" value="10:00" />
           </div>
           <button onclick="createClass()" style="width:100%;">Create Class</button>
-          <div class="error-msg" id="nc-error"></div>
+          <div class="error-msg hidden" id="nc-error"></div>
         </div>
 
         <div class="card">
@@ -193,26 +206,28 @@ export async function renderClasses(el) {
             </select>
           </div>
           <button onclick="enrollStudent()" style="width:100%;">Enroll Student</button>
-          <div class="error-msg" id="es-error"></div>
+          <div class="error-msg hidden" id="es-error"></div>
         </div>
       </div>
       
-      <div class="card" style="overflow-x: auto;">
-        <h2><svg><use href="#icon-book"></use></svg> Class Directory</h2>
+      <div class="card" style="overflow: hidden; padding: 0;">
+        <h2 style="padding: 24px; margin: 0; border-bottom: 1px solid var(--border);"><svg><use href="#icon-book"></use></svg> Class Directory</h2>
         ${classes.length ? `
-        <table>
-          <thead><tr><th>Class</th><th>Schedule</th><th>Enrolled</th></tr></thead>
-          <tbody>
-            ${classes.map(c => `<tr>
-              <td>
-                <div style="font-weight: 500;">${c.name}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">${c.subject || '-'}</div>
-              </td>
-              <td><span style="font-size: 13px; color: var(--text-muted);">${c.schedule || '-'}</span></td>
-              <td><span style="font-weight: 600;">${c.enrolled_count || 0}</span> <span style="color: var(--text-muted); font-size: 13px;">students</span></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>Class</th><th>Schedule</th><th>Enrolled</th></tr></thead>
+            <tbody>
+              ${classes.map(c => `<tr>
+                <td>
+                  <div style="font-weight: 500;">${c.name}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${c.subject || '-'}</div>
+                </td>
+                <td><span style="font-size: 13px; color: var(--text-muted);">${c.schedule || '-'}</span></td>
+                <td><span style="font-weight: 600;">${c.enrolled_count || 0}</span> <span style="color: var(--text-muted); font-size: 12px;">students</span></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
         ` : renderEmpty('No Classes', 'Create a class to get started.')}
       </div>
     </div>
@@ -235,12 +250,14 @@ export async function createClass() {
   const schedule = document.getElementById('nc-schedule-day').value + ' ' + formattedTime;
   
   const errEl = document.getElementById('nc-error');
+  errEl.classList.add('hidden');
   try {
     await api('/classes', { method: 'POST', body: { name, subject, schedule } });
     showToast('Class created');
     renderTab();
   } catch (err) {
     errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
   }
 }
 
@@ -248,8 +265,10 @@ export async function enrollStudent() {
   const student_id = document.getElementById('es-student').value;
   const class_id = document.getElementById('es-class').value;
   const errEl = document.getElementById('es-error');
+  errEl.classList.add('hidden');
   if (!student_id || !class_id) {
     errEl.textContent = 'Please select a student and a class.';
+    errEl.classList.remove('hidden');
     return;
   }
   try {
@@ -258,6 +277,7 @@ export async function enrollStudent() {
     renderTab();
   } catch (err) {
     errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
   }
 }
 
@@ -323,80 +343,82 @@ export async function renderAttendance(el) {
   });
 
   el.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 24px;">
+    <div class="page-header">
       <div>
-        <h2 style="font-size: 28px; margin-bottom: 4px;">Class Attendance</h2>
-        <p style="color: var(--text-muted); margin:0;">Mark daily attendance for your students</p>
+        <h1>Class Attendance</h1>
+        <p>Mark daily attendance for your students</p>
       </div>
-      <div style="display:flex; gap:24px; background:var(--card-bg); padding:12px 24px; border-radius:12px; border:1px solid var(--border-color);">
+      <div style="display:flex; gap:16px; background:var(--surface); padding:12px 24px; border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow: var(--shadow-sm);">
         <div style="text-align:center;">
-          <div style="font-size:24px; font-weight:bold; color:var(--primary);">${counts.present}</div>
-          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Present</div>
+          <div style="font-size:20px; font-weight:600; color:var(--success);">${counts.present}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Present</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-size:24px; font-weight:bold; color:var(--danger);">${counts.absent}</div>
-          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Absent</div>
+          <div style="font-size:20px; font-weight:600; color:var(--danger);">${counts.absent}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Absent</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-size:24px; font-weight:bold; color:var(--warning);">${counts.late}</div>
-          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Late</div>
+          <div style="font-size:20px; font-weight:600; color:var(--warning);">${counts.late}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Late</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-size:24px; font-weight:bold; color:var(--primary-light);">${counts.excused}</div>
-          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Excused</div>
+          <div style="font-size:20px; font-weight:600; color:var(--info);">${counts.excused}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Excused</div>
         </div>
       </div>
     </div>
     
-    <div class="card" style="margin-bottom: 24px; padding: 16px 24px;">
-      <div class="filter-bar" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-        <div>
+    <div class="card" style="margin-bottom: 24px;">
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+        <div style="flex:1; min-width: 200px;">
           <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px;">Select Class</label>
-          <select onchange="setSelectedClass(this.value); renderTab()" style="padding: 8px; border-radius: 6px;">
+          <select onchange="setSelectedClass(this.value); renderTab()">
             ${classes.map(c => `<option value="${c.id}" ${c.id == selectedClassId ? 'selected' : ''}>${c.name} (${c.subject || 'No Subject'})</option>`).join('')}
           </select>
         </div>
-        <div>
+        <div style="flex:1; min-width: 200px;">
           <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px;">Date</label>
-          <input type="date" value="${date}" onchange="setAttendanceDate(this.value)" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);" />
+          <input type="date" value="${date}" onchange="setAttendanceDate(this.value)" />
         </div>
-        <div style="margin-left:auto;">
+        <div style="margin-top: 20px;">
           <button onclick="submitBulkAttendance()"><svg><use href="#icon-check"></use></svg> Submit Attendance</button>
         </div>
       </div>
     </div>
     
-    <div class="card" style="padding:0; overflow-x:auto;">
-      ${students.length ? `
-      <table style="margin:0;">
-        <thead><tr><th>Student</th><th>Status Options</th></tr></thead>
-        <tbody>
-          ${students.map(s => {
-            const st = getStatus(s.id);
-            return `
-            <tr>
-              <td>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  ${renderAvatar(s.name)}
-                  <div>
-                    <div style="font-weight: 500;">${s.name}</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">${s.email}</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="table-container">
+        ${students.length ? `
+        <table>
+          <thead><tr><th>Student</th><th style="text-align:right;">Status Options</th></tr></thead>
+          <tbody>
+            ${students.map(s => {
+              const st = getStatus(s.id);
+              return `
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    ${renderAvatar(s.name)}
+                    <div>
+                      <div style="font-weight: 500;">${s.name}</div>
+                      <div style="font-size: 12px; color: var(--text-muted);">${s.email}</div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td>
-                <div style="display:flex; gap:8px;">
-                  <button class="${st === 'present' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px;" onclick="toggleAttendance(${s.id}, 'present')">Present</button>
-                  <button class="${st === 'absent' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px; background:${st === 'absent' ? 'var(--danger)' : ''};" onclick="toggleAttendance(${s.id}, 'absent')">Absent</button>
-                  <button class="${st === 'late' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px; background:${st === 'late' ? 'var(--warning)' : ''};" onclick="toggleAttendance(${s.id}, 'late')">Late</button>
-                  <button class="${st === 'excused' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px; background:${st === 'excused' ? 'var(--primary-light)' : ''}; border-color:${st === 'excused' ? 'var(--primary)' : ''};" onclick="toggleAttendance(${s.id}, 'excused')">Excused</button>
-                </div>
-              </td>
-            </tr>
-          `}).join('')}
-        </tbody>
-      </table>
-      ` : renderEmpty('No Students', 'There are no students enrolled in this class.')}
+                </td>
+                <td>
+                  <div style="display:flex; gap:8px; justify-content: flex-end;">
+                    <button class="${st === 'present' ? 'primary' : 'secondary'}" onclick="toggleAttendance(${s.id}, 'present')">Present</button>
+                    <button class="${st === 'absent' ? 'danger' : 'danger secondary'}" onclick="toggleAttendance(${s.id}, 'absent')">Absent</button>
+                    <button class="${st === 'late' ? 'primary' : 'secondary'}" style="${st === 'late' ? 'background:var(--warning);border-color:var(--warning);' : ''}" onclick="toggleAttendance(${s.id}, 'late')">Late</button>
+                    <button class="${st === 'excused' ? 'primary' : 'secondary'}" style="${st === 'excused' ? 'background:var(--info);border-color:var(--info);' : ''}" onclick="toggleAttendance(${s.id}, 'excused')">Excused</button>
+                  </div>
+                </td>
+              </tr>
+            `}).join('')}
+          </tbody>
+        </table>
+        ` : renderEmpty('No Students', 'There are no students enrolled in this class.')}
+      </div>
     </div>
   `;
 }
@@ -412,6 +434,13 @@ export async function renderGrades(el) {
   ]);
 
   el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1>Grades</h1>
+        <p>Record and manage academic performance.</p>
+      </div>
+    </div>
+
     <div class="grid-2">
       <div class="card" style="align-self: start;">
         <h2><svg><use href="#icon-plus"></use></svg> Add Grade</h2>
@@ -429,23 +458,23 @@ export async function renderGrades(el) {
           <input id="ng-max" type="number" placeholder="Maximum Score" value="100" />
         </div>
         <button onclick="addGrade()" style="width: 100%;" ${!students.length ? 'disabled' : ''}>Save Grade</button>
-        <div class="error-msg" id="ng-error"></div>
+        <div class="error-msg hidden" id="ng-error"></div>
       </div>
       
-      <div class="card" style="overflow-x: auto;">
-        <h2><svg><use href="#icon-chart"></use></svg> Recent Grades</h2>
-        ${grades.length ? `
-        <table>
-          <thead><tr><th>Student</th><th>Assignment</th><th style="text-align: right;">Score</th></tr></thead>
-          <tbody>${grades.map(g => `<tr>
-            <td>
-              <div style="font-weight: 500;">${g.student_name}</div>
-            </td>
-            <td style="color: var(--text-muted);">${g.assignment_name}</td>
-            <td style="display: flex; justify-content: flex-end;">${renderRadialGauge(g.score, g.max_score)}</td>
-          </tr>`).join('')}</tbody>
-        </table>
-        ` : renderEmpty('No Grades', 'No grades have been added yet.')}
+      <div class="card" style="overflow: hidden; padding: 0;">
+        <h2 style="padding: 24px; margin: 0; border-bottom: 1px solid var(--border);"><svg><use href="#icon-chart"></use></svg> Recent Grades</h2>
+        <div class="table-container">
+          ${grades.length ? `
+          <table>
+            <thead><tr><th>Student</th><th>Assignment</th><th style="text-align: right;">Score</th></tr></thead>
+            <tbody>${grades.map(g => `<tr>
+              <td><div style="font-weight: 500;">${g.student_name}</div></td>
+              <td style="color: var(--text-muted);">${g.assignment_name}</td>
+              <td style="display: flex; justify-content: flex-end;">${renderRadialGauge(g.score, g.max_score)}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+          ` : renderEmpty('No Grades', 'No grades have been added yet.')}
+        </div>
       </div>
     </div>
   `;
@@ -457,8 +486,10 @@ export async function addGrade() {
   const score = parseFloat(document.getElementById('ng-score').value);
   const max_score = parseFloat(document.getElementById('ng-max').value) || 100;
   const errEl = document.getElementById('ng-error');
+  errEl.classList.add('hidden');
   if (!student_id || !assignment_name || isNaN(score)) {
     errEl.textContent = 'Please fill out all fields.';
+    errEl.classList.remove('hidden');
     return;
   }
   try {
@@ -467,6 +498,7 @@ export async function addGrade() {
     renderTab();
   } catch (err) {
     errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
   }
 }
 
