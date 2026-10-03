@@ -1,7 +1,7 @@
 export function getAvatarColor(name) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 60%, 45%)`;
+  return `hsl(${Math.abs(hash) % 360}, 75%, 85%)`;
 }
 
 export function renderAvatar(name) {
@@ -43,15 +43,5 @@ export function renderEmpty(title, desc) {
       <h3>${title}</h3>
       <p>${desc}</p>
     </div>
-  `;
-}
-
-export function getSkeletonRow() {
-  return `
-    <tr>
-      <td><div class="skeleton" style="height:20px; width:150px;"></div></td>
-      <td><div class="skeleton" style="height:20px; width:100px;"></div></td>
-      <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
-    </tr>
   `;
 }

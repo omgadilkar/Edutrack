@@ -1,6 +1,7 @@
 import { api } from './api.js';
 import { renderAvatar, renderEmpty, renderRadialGauge, showToast } from './components.js';
-import { renderTab, switchTab } from './main.js';
+import Chart from 'chart.js/auto';
+import { renderTab } from './main.js';
 
 let selectedClassId = null;
 
@@ -17,141 +18,123 @@ window.attendanceState = {
 };
 
 function classSelector(classes) {
-  return `<select onchange="setSelectedClass(this.value); renderTab()" style="margin-bottom: 24px;">
-    ${classes.map(c => `<option value="${c.id}" ${c.id == selectedClassId ? 'selected' : ''}>${c.name}</option>`).join('')}
+  return `<select onchange="setSelectedClass(this.value); renderTab()" style="margin-bottom: 24px; max-width: 300px;">
+    ${classes.map(c => `<option value="${c.id}" ${c.id == selectedClassId ? 'selected' : ''}>${c.name} ${c.subject ? `(${c.subject})` : ''}</option>`).join('')}
   </select>`;
 }
 
 // DASHBOARD
 export async function renderTeacherDashboard(el) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const [classes, students] = await Promise.all([
+  const [classes, students, notices] = await Promise.all([
     api('/classes'), 
-    api('/users?role=student')
+    api('/users?role=student'),
+    api('/notices').catch(() => [])
   ]);
   
   // Calculate unique subjects
   const subjects = new Set(classes.map(c => c.subject).filter(Boolean));
   
+  window.teacherClasses = classes;
+  
   el.innerHTML = `
-    <div class="page-header">
-      <div>
-        <h1>Faculty Dashboard</h1>
-        <p>Manage your classes, attendance, and academics.</p>
-      </div>
+    <div style="margin-bottom: 24px;">
+      <h1 style="font-size: 28px; margin-bottom: 4px;">Faculty Dashboard</h1>
+      <p style="color: var(--text-muted); margin:0;">Manage your classes, attendance, and academics.</p>
     </div>
     
     <div class="grid-3" style="margin-bottom: 24px;">
-      <div class="card kpi-card">
-        <div class="kpi-title">Assigned Classes</div>
-        <div class="kpi-value">${classes.length}</div>
-        <div class="kpi-meta success">Active Semester</div>
+      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Assigned Classes</div>
+        <div style="font-size: 32px; font-weight: 700;">${classes.length}</div>
+        <div style="color: var(--success); font-size: 12px; margin-top: 4px;">Active Semester</div>
       </div>
-      <div class="card kpi-card">
-        <div class="kpi-title">Unique Subjects</div>
-        <div class="kpi-value">${subjects.size}</div>
-        <div class="kpi-meta neutral">Across all divisions</div>
+      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Unique Subjects</div>
+        <div style="font-size: 32px; font-weight: 700;">${subjects.size}</div>
+        <div style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Across all divisions</div>
       </div>
-      <div class="card kpi-card">
-        <div class="kpi-title">Total Students</div>
-        <div class="kpi-value">${students.length}</div>
-        <div class="kpi-meta info" style="cursor: pointer;" onclick="switchTab('students')">View Directory &rarr;</div>
+      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+        <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Total Students</div>
+        <div style="font-size: 32px; font-weight: 700;">${students.length}</div>
+        <div style="color: var(--primary); font-size: 12px; margin-top: 4px; cursor: pointer;" onclick="switchTab('students')">View Directory &rarr;</div>
       </div>
     </div>
     
-    <div class="grid-2">
-      <div style="display: flex; flex-direction: column; gap: 24px;">
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h2 style="margin: 0;"><svg><use href="#icon-calendar"></use></svg> Today's Timetable</h2>
-          </div>
-          <div class="activity-list">
-            <div class="activity-item" style="align-items:center; border:1px solid var(--border); padding: 12px; border-radius: var(--radius-md);">
-              <div style="flex:1;">
-                <div style="font-weight: 500;">Grade 10 - Physics (A)</div>
-                <div style="font-size:12px; color:var(--text-muted);">10:00 AM - 11:00 AM • Room 302</div>
-              </div>
-              <button class="secondary" onclick="switchTab('attendance')">Attendance</button>
-            </div>
-            <div class="activity-item" style="align-items:center; border:1px solid var(--border); padding: 12px; border-radius: var(--radius-md);">
-              <div style="flex:1;">
-                <div style="font-weight: 500;">Grade 11 - Advanced Math</div>
-                <div style="font-size:12px; color:var(--text-muted);">11:30 AM - 12:30 PM • Room 405</div>
-              </div>
-              <button class="secondary" onclick="switchTab('attendance')">Attendance</button>
-            </div>
-            <div class="activity-item" style="align-items:center; border:1px solid var(--warning); padding: 12px; border-radius: var(--radius-md); background: var(--warning-bg);">
-              <div style="flex:1;">
-                <div style="font-weight: 500;">Faculty Meeting (Demo)</div>
-                <div style="font-size:12px; color:var(--warning-text);">2:00 PM - 3:00 PM • Staff Room</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <h2><svg><use href="#icon-chart"></use></svg> Pending Marks Entry (Demo)</h2>
-          <div class="activity-list" style="margin-top:16px;">
-            <div class="activity-item">
-              <div class="dot" style="background: var(--danger);"></div>
-              <div class="content" style="flex:1;">
-                <p><strong>Grade 10 Midterms</strong> pending for 15 students.</p>
-                <button class="secondary" onclick="switchTab('grades')" style="margin-top: 8px;">Enter Marks</button>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="dot" style="background: var(--warning);"></div>
-              <div class="content">
-                <p><strong>Weekly Quiz</strong> needs grading for Grade 9.</p>
-              </div>
-            </div>
-          </div>
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div class="card">
+        <h2><svg><use href="#icon-chart"></use></svg> Class Enrollments</h2>
+        <div style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center; align-items: center;">
+          <canvas id="teacher-enrollment-chart"></canvas>
         </div>
       </div>
       
-      <div style="display: flex; flex-direction: column; gap: 24px;">
-        <div class="card">
-          <h2><svg><use href="#icon-bell"></use></svg> Notice Board (Demo)</h2>
-          <div class="activity-list" style="margin-top:16px;">
-            <div class="activity-item">
-              <div class="dot" style="background: var(--info);"></div>
-              <div class="content">
-                <p><strong>Exam Schedule Released:</strong> Final exams begin next month.</p>
-                <time>2 hours ago</time>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="dot" style="background: var(--success);"></div>
-              <div class="content">
-                <p><strong>System Maintenance:</strong> ERP will be down at midnight.</p>
-                <time>Yesterday</time>
-              </div>
-            </div>
-          </div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0;"><svg><use href="#icon-calendar"></use></svg> My Timetable</h2>
+          <button class="secondary" onclick="openTimetableModal()" style="font-size: 12px; padding: 4px 12px;"><svg><use href="#icon-calendar"></use></svg> Grid View</button>
         </div>
-        
-        <div class="card">
-          <h2><svg><use href="#icon-check"></use></svg> Upcoming Examinations (Demo)</h2>
-          <div class="activity-list" style="margin-top:16px;">
-            <div class="activity-item" style="justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px;">
-              <div>
-                <div style="font-weight: 500;">Physics Practical</div>
-                <div style="font-size:12px; color:var(--text-muted);">Grade 12 • Oct 15th</div>
-              </div>
-              <span class="badge warning">Upcoming</span>
-            </div>
-            <div class="activity-item" style="justify-content:space-between; align-items:center;">
-              <div>
-                <div style="font-weight: 500;">Math Final</div>
-                <div style="font-size:12px; color:var(--text-muted);">Grade 10 • Oct 18th</div>
-              </div>
-              <span class="badge warning">Upcoming</span>
+        ${classes.length ? classes.map(c => `
+        <div class="task-item">
+          <div>
+            <div class="title">${c.name}</div>
+            <div class="meta">${c.schedule || 'No schedule set'}</div>
+          </div>
+          <button class="secondary" onclick="setSelectedClass(${c.id}); switchTab('attendance')" style="padding: 4px 12px; font-size: 12px;">Attendance</button>
+        </div>
+        `).join('') : '<div class="meta">No classes assigned yet.</div>'}
+      </div>
+    </div>
+    
+    <div class="grid-1">
+      <div class="card">
+        <h2><svg><use href="#icon-bell"></use></svg> Notice Board</h2>
+        <div class="activity-list">
+          ${notices.length ? notices.map(n => `
+          <div class="activity-item">
+            <div class="dot" style="background: var(--${n.type || 'primary'});"></div>
+            <div class="content">
+              <p><strong>${n.title}:</strong> ${n.content}</p>
+              <time>${new Date(n.created_at).toLocaleDateString()} • ${n.author_name}</time>
             </div>
           </div>
+          `).join('') : '<div class="activity-item"><div class="content"><p>No recent notices.</p></div></div>'}
         </div>
       </div>
     </div>
   `;
+
+  // Render Bar Chart
+  setTimeout(() => {
+    const ctx = document.getElementById('teacher-enrollment-chart');
+    if (ctx && classes.length > 0) {
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: classes.map(c => c.name),
+          datasets: [{
+            label: 'Enrolled Students',
+            data: classes.map(c => c.enrolled_count || 0),
+            backgroundColor: '#6366f1',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0 }
+            }
+          }
+        }
+      });
+    }
+  }, 0);
 }
 
 // CLASSES
@@ -161,13 +144,6 @@ export async function renderClasses(el) {
     api('/users?role=student')
   ]);
   el.innerHTML = `
-    <div class="page-header">
-      <div>
-        <h1>Classes</h1>
-        <p>Manage your assigned classes and enrollments.</p>
-      </div>
-    </div>
-    
     <div class="grid-2">
       <div style="display: flex; flex-direction: column; gap: 24px; align-self: start;">
         <div class="card">
@@ -179,16 +155,16 @@ export async function renderClasses(el) {
             <input id="nc-subject" placeholder="Subject" />
           </div>
           <div class="form-row">
-            <select id="nc-schedule-day">
+            <select id="nc-schedule-day" style="flex: 2;">
               <option value="Mon/Wed">Mon/Wed</option>
               <option value="Tue/Thu">Tue/Thu</option>
               <option value="Mon/Wed/Fri">Mon/Wed/Fri</option>
               <option value="Everyday">Everyday</option>
             </select>
-            <input id="nc-schedule-time" type="time" value="10:00" />
+            <input id="nc-schedule-time" type="time" style="flex: 1;" value="10:00" />
           </div>
           <button onclick="createClass()" style="width:100%;">Create Class</button>
-          <div class="error-msg hidden" id="nc-error"></div>
+          <div class="error-msg" id="nc-error"></div>
         </div>
 
         <div class="card">
@@ -202,32 +178,30 @@ export async function renderClasses(el) {
           <div class="form-row full">
             <select id="es-class">
               <option value="">-- Select Class --</option>
-              ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+              ${classes.map(c => `<option value="${c.id}">${c.name} ${c.subject ? `(${c.subject})` : ''}</option>`).join('')}
             </select>
           </div>
           <button onclick="enrollStudent()" style="width:100%;">Enroll Student</button>
-          <div class="error-msg hidden" id="es-error"></div>
+          <div class="error-msg" id="es-error"></div>
         </div>
       </div>
       
-      <div class="card" style="overflow: hidden; padding: 0;">
-        <h2 style="padding: 24px; margin: 0; border-bottom: 1px solid var(--border);"><svg><use href="#icon-book"></use></svg> Class Directory</h2>
+      <div class="card" style="overflow-x: auto;">
+        <h2><svg><use href="#icon-book"></use></svg> Class Directory</h2>
         ${classes.length ? `
-        <div class="table-container">
-          <table>
-            <thead><tr><th>Class</th><th>Schedule</th><th>Enrolled</th></tr></thead>
-            <tbody>
-              ${classes.map(c => `<tr>
-                <td>
-                  <div style="font-weight: 500;">${c.name}</div>
-                  <div style="font-size: 12px; color: var(--text-muted);">${c.subject || '-'}</div>
-                </td>
-                <td><span style="font-size: 13px; color: var(--text-muted);">${c.schedule || '-'}</span></td>
-                <td><span style="font-weight: 600;">${c.enrolled_count || 0}</span> <span style="color: var(--text-muted); font-size: 12px;">students</span></td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
+        <table>
+          <thead><tr><th>Class</th><th>Schedule</th><th>Enrolled</th></tr></thead>
+          <tbody>
+            ${classes.map(c => `<tr>
+              <td>
+                <div style="font-weight: 500;">${c.name}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${c.subject || '-'}</div>
+              </td>
+              <td><span style="font-size: 13px; color: var(--text-muted);">${c.schedule || '-'}</span></td>
+              <td><span style="font-weight: 600;">${c.enrolled_count || 0}</span> <span style="color: var(--text-muted); font-size: 13px;">students</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
         ` : renderEmpty('No Classes', 'Create a class to get started.')}
       </div>
     </div>
@@ -250,14 +224,12 @@ export async function createClass() {
   const schedule = document.getElementById('nc-schedule-day').value + ' ' + formattedTime;
   
   const errEl = document.getElementById('nc-error');
-  errEl.classList.add('hidden');
   try {
     await api('/classes', { method: 'POST', body: { name, subject, schedule } });
     showToast('Class created');
     renderTab();
   } catch (err) {
     errEl.textContent = err.message;
-    errEl.classList.remove('hidden');
   }
 }
 
@@ -265,10 +237,8 @@ export async function enrollStudent() {
   const student_id = document.getElementById('es-student').value;
   const class_id = document.getElementById('es-class').value;
   const errEl = document.getElementById('es-error');
-  errEl.classList.add('hidden');
   if (!student_id || !class_id) {
     errEl.textContent = 'Please select a student and a class.';
-    errEl.classList.remove('hidden');
     return;
   }
   try {
@@ -277,7 +247,6 @@ export async function enrollStudent() {
     renderTab();
   } catch (err) {
     errEl.textContent = err.message;
-    errEl.classList.remove('hidden');
   }
 }
 
@@ -343,82 +312,80 @@ export async function renderAttendance(el) {
   });
 
   el.innerHTML = `
-    <div class="page-header">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 24px;">
       <div>
-        <h1>Class Attendance</h1>
-        <p>Mark daily attendance for your students</p>
+        <h2 style="font-size: 28px; margin-bottom: 4px;">Class Attendance</h2>
+        <p style="color: var(--text-muted); margin:0;">Mark daily attendance for your students</p>
       </div>
-      <div style="display:flex; gap:16px; background:var(--surface); padding:12px 24px; border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow: var(--shadow-sm);">
+      <div style="display:flex; gap:24px; background:var(--card-bg); padding:12px 24px; border-radius:12px; border:1px solid var(--border-color);">
         <div style="text-align:center;">
-          <div style="font-size:20px; font-weight:600; color:var(--success);">${counts.present}</div>
-          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Present</div>
+          <div style="font-size:24px; font-weight:bold; color:var(--primary);">${counts.present}</div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Present</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-size:20px; font-weight:600; color:var(--danger);">${counts.absent}</div>
-          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Absent</div>
+          <div style="font-size:24px; font-weight:bold; color:var(--danger);">${counts.absent}</div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Absent</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-size:20px; font-weight:600; color:var(--warning);">${counts.late}</div>
-          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Late</div>
+          <div style="font-size:24px; font-weight:bold; color:var(--warning);">${counts.late}</div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Late</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-size:20px; font-weight:600; color:var(--info);">${counts.excused}</div>
-          <div style="font-size:11px; color:var(--text-muted); font-weight:500;">Excused</div>
+          <div style="font-size:24px; font-weight:bold; color:var(--primary-light);">${counts.excused}</div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Excused</div>
         </div>
       </div>
     </div>
     
-    <div class="card" style="margin-bottom: 24px;">
-      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-        <div style="flex:1; min-width: 200px;">
+    <div class="card" style="margin-bottom: 24px; padding: 16px 24px;">
+      <div class="filter-bar" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+        <div>
           <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px;">Select Class</label>
-          <select onchange="setSelectedClass(this.value); renderTab()">
+          <select onchange="setSelectedClass(this.value); renderTab()" style="padding: 8px; border-radius: 6px;">
             ${classes.map(c => `<option value="${c.id}" ${c.id == selectedClassId ? 'selected' : ''}>${c.name} (${c.subject || 'No Subject'})</option>`).join('')}
           </select>
         </div>
-        <div style="flex:1; min-width: 200px;">
+        <div>
           <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px;">Date</label>
-          <input type="date" value="${date}" onchange="setAttendanceDate(this.value)" />
+          <input type="date" value="${date}" onchange="setAttendanceDate(this.value)" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);" />
         </div>
-        <div style="margin-top: 20px;">
+        <div style="margin-left:auto;">
           <button onclick="submitBulkAttendance()"><svg><use href="#icon-check"></use></svg> Submit Attendance</button>
         </div>
       </div>
     </div>
     
-    <div class="card" style="padding:0; overflow:hidden;">
-      <div class="table-container">
-        ${students.length ? `
-        <table>
-          <thead><tr><th>Student</th><th style="text-align:right;">Status Options</th></tr></thead>
-          <tbody>
-            ${students.map(s => {
-              const st = getStatus(s.id);
-              return `
-              <tr>
-                <td>
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    ${renderAvatar(s.name)}
-                    <div>
-                      <div style="font-weight: 500;">${s.name}</div>
-                      <div style="font-size: 12px; color: var(--text-muted);">${s.email}</div>
-                    </div>
+    <div class="card" style="padding:0; overflow-x:auto;">
+      ${students.length ? `
+      <table style="margin:0;">
+        <thead><tr><th>Student</th><th>Status Options</th></tr></thead>
+        <tbody>
+          ${students.map(s => {
+            const st = getStatus(s.id);
+            return `
+            <tr>
+              <td>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  ${renderAvatar(s.name)}
+                  <div>
+                    <div style="font-weight: 500;">${s.name}</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">${s.email}</div>
                   </div>
-                </td>
-                <td>
-                  <div style="display:flex; gap:8px; justify-content: flex-end;">
-                    <button class="${st === 'present' ? 'primary' : 'secondary'}" onclick="toggleAttendance(${s.id}, 'present')">Present</button>
-                    <button class="${st === 'absent' ? 'danger' : 'danger secondary'}" onclick="toggleAttendance(${s.id}, 'absent')">Absent</button>
-                    <button class="${st === 'late' ? 'primary' : 'secondary'}" style="${st === 'late' ? 'background:var(--warning);border-color:var(--warning);' : ''}" onclick="toggleAttendance(${s.id}, 'late')">Late</button>
-                    <button class="${st === 'excused' ? 'primary' : 'secondary'}" style="${st === 'excused' ? 'background:var(--info);border-color:var(--info);' : ''}" onclick="toggleAttendance(${s.id}, 'excused')">Excused</button>
-                  </div>
-                </td>
-              </tr>
-            `}).join('')}
-          </tbody>
-        </table>
-        ` : renderEmpty('No Students', 'There are no students enrolled in this class.')}
-      </div>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex; gap:8px;">
+                  <button class="${st === 'present' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px;" onclick="toggleAttendance(${s.id}, 'present')">Present</button>
+                  <button class="${st === 'absent' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px; background:${st === 'absent' ? 'var(--danger)' : ''};" onclick="toggleAttendance(${s.id}, 'absent')">Absent</button>
+                  <button class="${st === 'late' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px; background:${st === 'late' ? 'var(--warning)' : ''};" onclick="toggleAttendance(${s.id}, 'late')">Late</button>
+                  <button class="${st === 'excused' ? 'primary' : 'secondary'}" style="padding: 4px 12px; font-size:13px; background:${st === 'excused' ? 'var(--primary-light)' : ''}; border-color:${st === 'excused' ? 'var(--primary)' : ''};" onclick="toggleAttendance(${s.id}, 'excused')">Excused</button>
+                </div>
+              </td>
+            </tr>
+          `}).join('')}
+        </tbody>
+      </table>
+      ` : renderEmpty('No Students', 'There are no students enrolled in this class.')}
     </div>
   `;
 }
@@ -434,13 +401,6 @@ export async function renderGrades(el) {
   ]);
 
   el.innerHTML = `
-    <div class="page-header">
-      <div>
-        <h1>Grades</h1>
-        <p>Record and manage academic performance.</p>
-      </div>
-    </div>
-
     <div class="grid-2">
       <div class="card" style="align-self: start;">
         <h2><svg><use href="#icon-plus"></use></svg> Add Grade</h2>
@@ -458,23 +418,23 @@ export async function renderGrades(el) {
           <input id="ng-max" type="number" placeholder="Maximum Score" value="100" />
         </div>
         <button onclick="addGrade()" style="width: 100%;" ${!students.length ? 'disabled' : ''}>Save Grade</button>
-        <div class="error-msg hidden" id="ng-error"></div>
+        <div class="error-msg" id="ng-error"></div>
       </div>
       
-      <div class="card" style="overflow: hidden; padding: 0;">
-        <h2 style="padding: 24px; margin: 0; border-bottom: 1px solid var(--border);"><svg><use href="#icon-chart"></use></svg> Recent Grades</h2>
-        <div class="table-container">
-          ${grades.length ? `
-          <table>
-            <thead><tr><th>Student</th><th>Assignment</th><th style="text-align: right;">Score</th></tr></thead>
-            <tbody>${grades.map(g => `<tr>
-              <td><div style="font-weight: 500;">${g.student_name}</div></td>
-              <td style="color: var(--text-muted);">${g.assignment_name}</td>
-              <td style="display: flex; justify-content: flex-end;">${renderRadialGauge(g.score, g.max_score)}</td>
-            </tr>`).join('')}</tbody>
-          </table>
-          ` : renderEmpty('No Grades', 'No grades have been added yet.')}
-        </div>
+      <div class="card" style="overflow-x: auto;">
+        <h2><svg><use href="#icon-chart"></use></svg> Recent Grades</h2>
+        ${grades.length ? `
+        <table>
+          <thead><tr><th>Student</th><th>Assignment</th><th style="text-align: right;">Score</th></tr></thead>
+          <tbody>${grades.map(g => `<tr>
+            <td>
+              <div style="font-weight: 500;">${g.student_name}</div>
+            </td>
+            <td style="color: var(--text-muted);">${g.assignment_name}</td>
+            <td style="display: flex; justify-content: flex-end;">${renderRadialGauge(g.score, g.max_score)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+        ` : renderEmpty('No Grades', 'No grades have been added yet.')}
       </div>
     </div>
   `;
@@ -486,10 +446,8 @@ export async function addGrade() {
   const score = parseFloat(document.getElementById('ng-score').value);
   const max_score = parseFloat(document.getElementById('ng-max').value) || 100;
   const errEl = document.getElementById('ng-error');
-  errEl.classList.add('hidden');
   if (!student_id || !assignment_name || isNaN(score)) {
     errEl.textContent = 'Please fill out all fields.';
-    errEl.classList.remove('hidden');
     return;
   }
   try {
@@ -498,10 +456,72 @@ export async function addGrade() {
     renderTab();
   } catch (err) {
     errEl.textContent = err.message;
-    errEl.classList.remove('hidden');
   }
 }
 
 window.createClass = createClass;
 window.enrollStudent = enrollStudent;
 window.addGrade = addGrade;
+
+export function openTimetableModal() {
+  const classes = window.teacherClasses || [];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  
+  const times = new Set();
+  const scheduleData = [];
+  
+  classes.forEach(c => {
+    if (!c.schedule) return;
+    const parts = c.schedule.split(' ');
+    if (parts.length >= 2) {
+      let dayPart = parts[0];
+      let timePart = parts.slice(1).join(' ');
+      
+      let classDays = [];
+      if (dayPart === 'Everyday') classDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+      else classDays = dayPart.split('/');
+      
+      times.add(timePart);
+      scheduleData.push({ c, classDays, time: timePart });
+    }
+  });
+  
+  const sortedTimes = Array.from(times).sort((a, b) => {
+    const tA = new Date('1970/01/01 ' + a);
+    const tB = new Date('1970/01/01 ' + b);
+    return tA - tB;
+  });
+  
+  let html = '<table class="timetable" style="width:100%; border-collapse: collapse; text-align:center;">';
+  html += '<thead><tr><th style="border: 1px solid var(--border); padding: 12px; background: var(--surface-hover);">Time</th>' + days.map(d => `<th style="border: 1px solid var(--border); padding: 12px; background: var(--surface-hover);">${d}</th>`).join('') + '</tr></thead>';
+  html += '<tbody>';
+  
+  if (sortedTimes.length === 0) {
+    html += `<tr><td colspan="6" style="padding: 24px; color: var(--text-muted); border: 1px solid var(--border);">No scheduled classes.</td></tr>`;
+  }
+  
+  sortedTimes.forEach(time => {
+    html += `<tr><td style="font-weight:bold; white-space: nowrap; border: 1px solid var(--border); padding: 12px; background: var(--surface-hover);">${time}</td>`;
+    days.forEach(day => {
+      const matchingClasses = scheduleData.filter(item => item.time === time && item.classDays.includes(day));
+      if (matchingClasses.length > 0) {
+        html += `<td style="border: 1px solid var(--border); padding: 12px; background: var(--surface);">
+          ${matchingClasses.map(item => `
+            <div style="font-weight:600; font-size:13px; color: var(--primary);">${item.c.name}</div>
+            <div style="font-size:11px; color: var(--text-muted);">${item.c.subject || ''}</div>
+          `).join('<hr style="margin: 4px 0; border: none; border-top: 1px solid var(--border);" />')}
+        </td>`;
+      } else {
+        html += `<td style="border: 1px solid var(--border); padding: 12px; color: var(--text-muted); background: var(--surface);">--</td>`;
+      }
+    });
+    html += `</tr>`;
+  });
+  
+  html += '</tbody></table>';
+  
+  document.getElementById('timetable-container').innerHTML = html;
+  window.openModal('timetable-modal');
+}
+window.openTimetableModal = openTimetableModal;
+

@@ -26,7 +26,10 @@ router.get('/', requireRole('teacher', 'admin'), (req, res) => {
 
 // Create class
 router.post('/', requireRole('teacher', 'admin'), (req, res) => {
-  const { name, department, course, semester, division, subject, teacher_id, schedule } = req.body;
+  const { name, department, course, semester, division, subject, schedule } = req.body;
+  let { teacher_id } = req.body;
+  if (req.user.role === 'teacher') teacher_id = req.user.id;
+  
   if (!name) return res.status(400).json({ error: 'name is required' });
   const info = db
     .prepare('INSERT INTO classes (name, department, course, semester, division, subject, teacher_id, schedule) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')

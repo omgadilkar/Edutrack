@@ -22,37 +22,11 @@ function seed() {
     'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)'
   );
 
-  const admin = insertUser.run('Ava Admin', 'admin@edutrack.dev', hash('admin123'), 'admin');
-  const teacher1 = insertUser.run('Mr. Sharma', 'sharma@edutrack.dev', hash('teacher123'), 'teacher');
-  const teacher2 = insertUser.run('Ms. Rao', 'rao@edutrack.dev', hash('teacher123'), 'teacher');
+  insertUser.run('Primary Admin', 'admin@edutrack.dev', hash('admin123'), 'admin');
 
-  const students = [
-    ['Aarav Mehta', 'aarav@edutrack.dev'],
-    ['Diya Kapoor', 'diya@edutrack.dev'],
-    ['Kabir Singh', 'kabir@edutrack.dev'],
-    ['Isha Nair', 'isha@edutrack.dev'],
-    ['Rohan Gupta', 'rohan@edutrack.dev'],
-  ].map(([name, email]) => insertUser.run(name, email, hash('student123'), 'student'));
-
-  const insertClass = db.prepare(
-    'INSERT INTO classes (name, department, course, semester, division, subject, teacher_id, schedule) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  );
-  const class1 = insertClass.run('Grade 10 - A', 'Science', 'B.Tech', 'Sem 1', 'A', 'Mathematics', teacher1.lastInsertRowid, 'Mon/Wed/Fri 9:00 AM');
-  const class2 = insertClass.run('Grade 10 - B', 'Computer Science', 'B.Tech', 'Sem 1', 'B', 'Physics', teacher2.lastInsertRowid, 'Tue/Thu 11:00 AM');
-
-  const insertEnrollment = db.prepare(
-    'INSERT INTO enrollments (class_id, student_id) VALUES (?, ?)'
-  );
-  students.forEach((s, i) => {
-    insertEnrollment.run(class1.lastInsertRowid, s.lastInsertRowid);
-    if (i % 2 === 0) insertEnrollment.run(class2.lastInsertRowid, s.lastInsertRowid);
-  });
-
-  console.log('Seeded database with sample admin, teachers, students, and classes.');
+  console.log('Seeded database with primary admin account only.');
   console.log('Login credentials:');
   console.log('  Admin:   admin@edutrack.dev / admin123');
-  console.log('  Teacher: sharma@edutrack.dev / teacher123');
-  console.log('  Student: aarav@edutrack.dev / student123');
 }
 
 seed();

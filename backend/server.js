@@ -8,6 +8,7 @@ const usersRoutes = require('./routes/users');
 const classesRoutes = require('./routes/classes');
 const attendanceRoutes = require('./routes/attendance');
 const gradesRoutes = require('./routes/grades');
+const noticesRoutes = require('./routes/notices');
 const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/users', authenticateToken, usersRoutes);
 app.use('/api/classes', authenticateToken, classesRoutes);
 app.use('/api/attendance', authenticateToken, attendanceRoutes);
 app.use('/api/grades', authenticateToken, gradesRoutes);
+app.use('/api/notices', authenticateToken, noticesRoutes);
 
 // Serve the static frontend from dist
 app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));

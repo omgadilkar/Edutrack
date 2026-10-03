@@ -9,19 +9,8 @@ const router = express.Router();
 router.get('/', requireRole('admin', 'teacher'), (req, res) => {
   const { role } = req.query;
   
-  if (req.user.role === 'teacher') {
-    // A teacher can only see students who are enrolled in their classes
-    const stmt = db.prepare(`
-      SELECT DISTINCT u.id, u.name, u.email, u.role, u.student_number, u.phone, u.parent_phone, u.created_at
-      FROM users u
-      JOIN enrollments e ON e.student_id = u.id
-      JOIN classes c ON c.id = e.class_id
-      WHERE c.teacher_id = ? ${role ? 'AND u.role = ?' : ''}
-    `);
-    
-    const rows = role ? stmt.all(req.user.id, role) : stmt.all(req.user.id);
-    return res.json(rows);
-  }
+  // Teachers and admins can see all users (or filter by role) to allow for enrollment
+
 
   const rows = role
     ? db.prepare('SELECT id, name, email, role, student_number, phone, parent_phone, created_at FROM users WHERE role = ?').all(role)
@@ -60,6 +49,33 @@ router.post('/', requireRole('admin'), (req, res) => {
 router.delete('/:id', requireRole('admin'), (req, res) => {
   db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
   res.json({ success: true });
+});
+
+// Update a user - admin only
+router.put('/:id', requireRole('admin'), (req, res) => {
+  const { name, email, student_number, phone, parent_phone } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'name and email are required' });
+  }
+  if (!email.includes('@')) {
+    return res.status(400).json({ error: 'Email must contain an @ symbol' });
+  }
+
+  try {
+    const info = db
+      .prepare('UPDATE users SET name = ?, email = ?, student_number = ?, phone = ?, parent_phone = ? WHERE id = ?')
+      .run(name, email, student_number || null, phone || null, parent_phone || null, req.params.id);
+    
+    if (info.changes === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return res.status(409).json({ error: 'A user with this email already exists' });
+    }
+    res.status(500).json({ error: 'Failed to update user' });
+  }
 });
 
 module.exports = router;

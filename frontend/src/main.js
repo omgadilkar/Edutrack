@@ -1,7 +1,8 @@
-import { renderAvatar } from './components.js';
+import { renderAvatar, renderEmpty } from './components.js';
 import { initAuth, logout } from './auth.js';
 import { renderAdminStudents, renderAdminDashboard, handleGlobalSearch, renderAdminAttendance } from './admin.js';
 import { renderClasses, renderAttendance, renderGrades, renderTeacherDashboard } from './teacher.js';
+import { renderStudentDashboard, renderStudentAttendance } from './student.js';
 
 export let activeTab = null;
 
@@ -69,7 +70,7 @@ export function render() {
     tabs = [
       ['dashboard', 'Dashboard', 'icon-chart'],
       ['attendance', 'Attendance', 'icon-check'],
-      ['students', 'Student Directory', 'icon-users']
+      ['students', 'User Directory', 'icon-users']
     ];
   } else if (user.role === 'teacher') {
     tabs = [
@@ -77,7 +78,12 @@ export function render() {
       ['classes', 'Classes', 'icon-book'], 
       ['attendance', 'Attendance', 'icon-check'], 
       ['grades', 'Grades', 'icon-edit'],
-      ['students', 'Student Directory', 'icon-users']
+      ['students', 'User Directory', 'icon-users']
+    ];
+  } else if (user.role === 'student') {
+    tabs = [
+      ['dashboard', 'Dashboard', 'icon-chart'],
+      ['attendance', 'My Attendance', 'icon-check']
     ];
   }
 
@@ -134,6 +140,9 @@ export async function renderTab() {
       if (activeTab === 'attendance') return await renderAttendance(el);
       if (activeTab === 'grades') return await renderGrades(el);
       if (activeTab === 'students') return await renderAdminStudents(el);
+    } else if (user.role === 'student') {
+      if (activeTab === 'dashboard') return await renderStudentDashboard(el);
+      if (activeTab === 'attendance') return await renderStudentAttendance(el);
     }
   } catch (err) {
     el.innerHTML = `<div class="card"><div class="error-msg">${err.message}</div></div>`;
