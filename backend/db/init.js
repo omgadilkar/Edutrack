@@ -35,10 +35,10 @@ function seed() {
   ].map(([name, email]) => insertUser.run(name, email, hash('student123'), 'student'));
 
   const insertClass = db.prepare(
-    'INSERT INTO classes (name, subject, teacher_id, schedule) VALUES (?, ?, ?, ?)'
+    'INSERT INTO classes (name, department, course, semester, division, subject, teacher_id, schedule) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   );
-  const class1 = insertClass.run('Grade 10 - A', 'Mathematics', teacher1.lastInsertRowid, 'Mon/Wed/Fri 9:00 AM');
-  const class2 = insertClass.run('Grade 10 - B', 'Science', teacher2.lastInsertRowid, 'Tue/Thu 11:00 AM');
+  const class1 = insertClass.run('Grade 10 - A', 'Science', 'B.Tech', 'Sem 1', 'A', 'Mathematics', teacher1.lastInsertRowid, 'Mon/Wed/Fri 9:00 AM');
+  const class2 = insertClass.run('Grade 10 - B', 'Computer Science', 'B.Tech', 'Sem 1', 'B', 'Physics', teacher2.lastInsertRowid, 'Tue/Thu 11:00 AM');
 
   const insertEnrollment = db.prepare(
     'INSERT INTO enrollments (class_id, student_id) VALUES (?, ?)'

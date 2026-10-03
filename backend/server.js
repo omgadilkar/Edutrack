@@ -4,10 +4,11 @@ const cors = require('cors');
 const path = require('path');
 
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const classRoutes = require('./routes/classes');
+const usersRoutes = require('./routes/users');
+const classesRoutes = require('./routes/classes');
 const attendanceRoutes = require('./routes/attendance');
-const gradeRoutes = require('./routes/grades');
+const gradesRoutes = require('./routes/grades');
+const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -16,10 +17,10 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/classes', classRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/grades', gradeRoutes);
+app.use('/api/users', authenticateToken, usersRoutes);
+app.use('/api/classes', authenticateToken, classesRoutes);
+app.use('/api/attendance', authenticateToken, attendanceRoutes);
+app.use('/api/grades', authenticateToken, gradesRoutes);
 
 // Serve the static frontend from dist
 app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));

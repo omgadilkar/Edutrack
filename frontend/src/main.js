@@ -1,21 +1,7 @@
-import { api, state } from './api.js';
-import { renderAvatar, showToast, renderEmpty, renderRadialGauge } from './components.js';
-import './auth.js';
-
-import { renderAdminOverview, renderAdminUsers, renderAdminClasses, createUser, deleteUser, createClass, enrollStudent } from './admin.js';
-import { renderTeacherClasses, renderTeacherAttendance, renderTeacherGrades, markAttendance, addGrade, setTeacherSelectedClass } from './teacher.js';
-import { renderStudentAttendance, renderStudentGrades } from './student.js';
-
-// Bind to window for HTML inline event handlers
-window.createUser = createUser;
-window.deleteUser = deleteUser;
-window.createClass = createClass;
-window.enrollStudent = enrollStudent;
-window.markAttendance = markAttendance;
-window.addGrade = addGrade;
-window.setTeacherSelectedClass = setTeacherSelectedClass;
-window.switchTab = switchTab;
-window.renderTab = renderTab;
+import { renderAvatar } from './components.js';
+import { initAuth, logout } from './auth.js';
+import { renderAdminStudents, renderAdminDashboard, handleGlobalSearch, renderAdminAttendance } from './admin.js';
+import { renderClasses, renderAttendance, renderGrades, renderTeacherDashboard } from './teacher.js';
 
 export let activeTab = null;
 
@@ -26,71 +12,142 @@ function getGreeting() {
   return "Good evening,";
 }
 
+export function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    document.body.classList.toggle('theme-dark', saved === 'dark');
+    document.body.classList.toggle('theme-light', saved === 'light');
+    const icon = document.getElementById('theme-icon');
+    if (icon) {
+      icon.innerHTML = saved === 'dark' ? '<use href="#icon-sun"></use>' : '<use href="#icon-moon"></use>';
+    }
+  }
+}
+
+export function toggleTheme() {
+  const isDark = document.body.classList.contains('theme-dark') || 
+    (!document.body.classList.contains('theme-light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  
+  if (isDark) {
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('theme-light');
+    localStorage.setItem('theme', 'light');
+    document.getElementById('theme-icon').innerHTML = '<use href="#icon-moon"></use>';
+  } else {
+    document.body.classList.remove('theme-light');
+    document.body.classList.add('theme-dark');
+    localStorage.setItem('theme', 'dark');
+    document.getElementById('theme-icon').innerHTML = '<use href="#icon-sun"></use>';
+  }
+}
+
+export function toggleSidebar() {
+  const sidebar = document.getElementById('app-sidebar');
+  if (sidebar) sidebar.classList.toggle('open');
+}
+
 export function showApp() {
-  document.getElementById('login-screen').classList.add('hidden');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!user.id) return logout();
+
+  const loginScreen = document.getElementById('login-screen');
+  if (loginScreen) loginScreen.classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('user-greeting').textContent = getGreeting();
-  document.getElementById('user-name').textContent = state.user.name;
-  document.getElementById('user-avatar-container').innerHTML = renderAvatar(state.user.name);
+  document.getElementById('user-name').textContent = user.name || "User";
+  document.getElementById('user-avatar-container').innerHTML = renderAvatar(user.name || "User");
+  
+  initTheme();
   render();
 }
 
 export function render() {
-  const role = state.user.role;
-  const tabs = role === 'admin'
-    ? [['overview', 'Overview'], ['users', 'Manage Users'], ['classes', 'Classes']]
-    : role === 'teacher'
-    ? [['classes', 'My Classes'], ['attendance', 'Attendance'], ['grades', 'Grades']]
-    : [['attendance', 'My Attendance'], ['grades', 'My Grades']];
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  let tabs = [];
+  
+  if (user.role === 'admin') {
+    tabs = [
+      ['dashboard', 'Dashboard', 'icon-chart'],
+      ['attendance', 'Attendance', 'icon-check'],
+      ['students', 'Student Directory', 'icon-users']
+    ];
+  } else if (user.role === 'teacher') {
+    tabs = [
+      ['dashboard', 'Dashboard', 'icon-chart'],
+      ['classes', 'Classes', 'icon-book'], 
+      ['attendance', 'Attendance', 'icon-check'], 
+      ['grades', 'Grades', 'icon-edit'],
+      ['students', 'Student Directory', 'icon-users']
+    ];
+  }
 
-  if (!activeTab || !tabs.find(t => t[0] === activeTab)) activeTab = tabs[0][0];
+  if (!activeTab || !tabs.find(t => t[0] === activeTab)) {
+    activeTab = tabs[0] ? tabs[0][0] : null;
+  }
 
-  const container = document.getElementById('main-container');
-  container.innerHTML = `
-    <div class="tabs">
-      ${tabs.map(([key, label]) => `<button class="${activeTab === key ? 'active' : ''}" onclick="switchTab('${key}')">${label}</button>`).join('')}
-    </div>
-    <div id="tab-content"></div>
-  `;
-  renderTab();
+  const sidebarNav = document.getElementById('sidebar-nav');
+  if (sidebarNav) {
+    sidebarNav.innerHTML = tabs.map(([key, label, icon]) => `
+      <button class="${activeTab === key ? 'active' : ''}" onclick="switchTab('${key}')">
+        <svg><use href="#${icon}"></use></svg>
+        <span>${label}</span>
+      </button>
+    `).join('');
+  }
+
+  if (activeTab) renderTab();
 }
 
 export function switchTab(key) {
   activeTab = key;
   render();
+  const sidebar = document.getElementById('app-sidebar');
+  if (sidebar && window.innerWidth <= 1024) {
+    sidebar.classList.remove('open');
+  }
 }
 
 export async function renderTab() {
-  const role = state.user.role;
-  const el = document.getElementById('tab-content');
-  el.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading...</div>';
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const el = document.getElementById('main-container');
+  if (!el) return;
+  
+  el.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      <div class="grid-3">
+        <div class="skeleton" style="height:100px;"></div>
+        <div class="skeleton" style="height:100px;"></div>
+        <div class="skeleton" style="height:100px;"></div>
+      </div>
+      <div class="skeleton" style="height:300px;"></div>
+    </div>
+  `;
+
   try {
-    if (role === 'admin') {
-      if (activeTab === 'overview') return renderAdminOverview(el);
-      if (activeTab === 'users') return renderAdminUsers(el);
-      if (activeTab === 'classes') return renderAdminClasses(el);
-    } else if (role === 'teacher') {
-      if (activeTab === 'classes') return renderTeacherClasses(el);
-      if (activeTab === 'attendance') return renderTeacherAttendance(el);
-      if (activeTab === 'grades') return renderTeacherGrades(el);
-    } else {
-      if (activeTab === 'attendance') return renderStudentAttendance(el);
-      if (activeTab === 'grades') return renderStudentGrades(el);
+    if (user.role === 'admin') {
+      if (activeTab === 'dashboard') return await renderAdminDashboard(el);
+      if (activeTab === 'attendance') return await renderAdminAttendance(el);
+      if (activeTab === 'students') return await renderAdminStudents(el);
+    } else if (user.role === 'teacher') {
+      if (activeTab === 'dashboard') return await renderTeacherDashboard(el);
+      if (activeTab === 'classes') return await renderClasses(el);
+      if (activeTab === 'attendance') return await renderAttendance(el);
+      if (activeTab === 'grades') return await renderGrades(el);
+      if (activeTab === 'students') return await renderAdminStudents(el);
     }
   } catch (err) {
     el.innerHTML = `<div class="card"><div class="error-msg">${err.message}</div></div>`;
   }
 }
 
+window.switchTab = switchTab;
+window.renderTab = renderTab;
+window.logout = logout;
+window.toggleTheme = toggleTheme;
+window.toggleSidebar = toggleSidebar;
+window.handleGlobalSearch = handleGlobalSearch;
+
 // Boot
-(async function init() {
-  if (state.token) {
-    try {
-      const data = await api('/auth/me');
-      state.user = data.user;
-      showApp();
-    } catch {
-      window.logout();
-    }
-  }
+(function init() {
+  initAuth();
 })();

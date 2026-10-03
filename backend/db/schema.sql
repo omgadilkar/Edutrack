@@ -6,12 +6,19 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'student')),
+  student_number TEXT UNIQUE,
+  phone TEXT,
+  parent_phone TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS classes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
+  department TEXT,
+  course TEXT,
+  semester TEXT,
+  division TEXT,
   subject TEXT,
   teacher_id INTEGER,
   schedule TEXT,
