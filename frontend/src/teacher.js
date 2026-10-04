@@ -282,11 +282,35 @@ export async function submitBulkAttendance() {
       }
     });
     showToast('Attendance submitted successfully');
+    downloadAttendanceCSV();
   } catch(err) {
     alert(err.message);
   }
 }
 window.submitBulkAttendance = submitBulkAttendance;
+
+export function downloadAttendanceCSV() {
+  const records = window.attendanceState.records;
+  const students = window.attendanceState.currentStudents || [];
+  const date = window.attendanceState.selectedDate;
+  
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Student Name,Email,Status,Date\n";
+  
+  students.forEach(s => {
+    const status = records[s.id] || 'present';
+    csvContent += `"${s.name}","${s.email}","${status}","${date}"\n`;
+  });
+  
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `attendance_${date}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+window.downloadAttendanceCSV = downloadAttendanceCSV;
 
 export async function renderAttendance(el) {
   const classes = await api('/classes');
@@ -294,6 +318,8 @@ export async function renderAttendance(el) {
   if (!selectedClassId) selectedClassId = classes[0].id;
   
   const students = await api(`/classes/${selectedClassId}/students`);
+  window.attendanceState.currentStudents = students;
+  
   const date = window.attendanceState.selectedDate;
   const existingRecords = await api(`/attendance?class_id=${selectedClassId}&date=${date}`);
   
@@ -349,7 +375,8 @@ export async function renderAttendance(el) {
           <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px;">Date</label>
           <input type="date" value="${date}" onchange="setAttendanceDate(this.value)" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);" />
         </div>
-        <div style="margin-left:auto;">
+        <div style="margin-left:auto; display:flex; gap:12px;">
+          <button class="secondary" onclick="downloadAttendanceCSV()"><svg><use href="#icon-chart"></use></svg> Download CSV</button>
           <button onclick="submitBulkAttendance()"><svg><use href="#icon-check"></use></svg> Submit Attendance</button>
         </div>
       </div>
