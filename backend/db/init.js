@@ -13,20 +13,21 @@ const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
 db.exec(schema);
 
 function seed() {
-  const userCount = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-  if (userCount > 0) return; // already seeded
-
   const hash = (pw) => bcrypt.hashSync(pw, 8);
 
   const insertUser = db.prepare(
-    'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)'
+    'INSERT OR IGNORE INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)'
   );
 
   insertUser.run('Primary Admin', 'admin@edutrack.dev', hash('admin123'), 'admin');
+  insertUser.run('Mr. Sharma', 'sharma@edutrack.dev', hash('teacher123'), 'teacher');
+  insertUser.run('Aarav Patel', 'aarav@edutrack.dev', hash('student123'), 'student');
 
-  console.log('Seeded database with primary admin account only.');
+  console.log('Seeded database with demo accounts (if not already present).');
   console.log('Login credentials:');
   console.log('  Admin:   admin@edutrack.dev / admin123');
+  console.log('  Teacher: sharma@edutrack.dev / teacher123');
+  console.log('  Student: aarav@edutrack.dev / student123');
 }
 
 seed();
