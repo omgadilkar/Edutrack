@@ -7,7 +7,13 @@ const { JWT_SECRET } = require('../middleware/auth');
 const router = express.Router();
 
 router.post('/login', (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email?.trim();
+  const password = req.body.password;
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
